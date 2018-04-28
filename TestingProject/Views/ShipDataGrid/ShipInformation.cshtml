@@ -1,0 +1,80 @@
+﻿
+@{
+    ViewBag.Title = "ShipInformation";
+}
+
+<h2>ShipInformation</h2>
+@(Html.DevExtreme().DataGrid<TestingProject.Models.Ship>()
+    .DataSource(d => d.WebApi()
+        .RouteName("ShipDataGridWebApi")
+        .LoadAction("Ships")
+        .InsertAction("InsertShip")
+        .UpdateAction("UpdateShip")
+        .DeleteAction("DeleteShip")
+        .Key("ShipID")
+    ).Selection(s => s.Mode(SelectionMode.Single))
+    .HoverStateEnabled(true)
+    .Columns(columns => {
+        columns.AddFor(m => m.ShipID);
+        columns.AddFor(m => m.ShipName);
+        columns.AddFor(m => m.ShipDate);
+        columns.AddFor(m => m.ShipCountry);
+        columns.AddFor(m => m.ShipCity);
+    }).OnSelectionChanged("change_selected")
+    
+    
+    .RemoteOperations(true)
+    .FilterRow(f => f.Visible(true))
+    .HeaderFilter(f => f.Visible(true))
+    .GroupPanel(p => p.Visible(true))
+    .Scrolling(s => s.Mode(GridScrollingMode.Virtual))
+    .Height(600)
+    .ShowBorders(true)
+    .MasterDetail(md => md
+        .Enabled(true)
+        .Template(@<text>
+
+            @(Html.DevExtreme().DataGrid()
+                .DataSource(d => d.WebApi()
+                    .RouteName("ShipDataGridWebApi")
+                    .LoadAction("ShipDetails")
+                    .LoadParams(new { ShipID = new JS("data.ShipID") })
+                )
+                .ShowBorders(true)
+            )
+
+        </text>)
+    )
+    .Editing(e => e.AllowAdding(true).AllowDeleting(true).AllowUpdating(true))
+    .Grouping(g => g.AutoExpandAll(false))
+    
+)
+
+<div id="shipInformation">
+    <p class="shipNotes"></p>
+</div>
+
+<script>
+    function change_selected(selectedItems)
+    {
+        var selectedShip = selectedItems.selectedRowsData[0];
+        
+        var apiurl = "/api/ShipDataGridWebApi/ShipNotes";
+        var dataPost=JSON.stringify(selectedShip);
+        alert(dataPost);
+        $.ajax({
+                type:"POST",
+                data: dataPost,
+                url: apiurl,
+                contentType: "application/json",
+                success: function (data, textStatus, xhr) {
+                    var res = JSON.parse(data);
+                    $(".shipNotes").text("The shipID is " + res.ShipID+". The product is "+res.Product);
+                },
+                error: function (xhr, textStatus, errorThrown) {
+                    alert(errorThrown);
+
+                }
+        });
+    }
+</script>
